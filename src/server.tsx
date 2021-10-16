@@ -2,7 +2,7 @@ import ReactDOMServer from 'react-dom/server'
 import { StaticRouterContext } from 'react-router'
 import { StaticRouter } from 'react-router-dom'
 import App from './App'
-import { PageComponent } from './lib/next';
+import { GetServerSidePropsResponse, PageComponent } from './lib/next';
 
 const pages = import.meta.glob('./pages/**/*.tsx');
 const routes = Object.entries(pages).map(([filepath, component]) => {
@@ -41,21 +41,50 @@ function matches(route: string, path: string): Record<string, string> | undefine
     return output
 }
 
-export async function render(url: string, context?: StaticRouterContext): Promise<string> {
+interface MatchedRoute {
+    params: Record<string, string>,
+    component: () => Promise<{[key: string]: any;}>,
+}
+interface MaybeMatchedRoute {
+    params: Record<string, string> | undefined,
+    component: () => Promise<{[key: string]: any;}>,
+}
+
+function isMatchedRoute(m: MaybeMatchedRoute): m is MatchedRoute {
+    return m.params !== undefined
+}
+
+function matchRoutes(url: string): MatchedRoute | undefined {
     const matchedRoutes = routes.map(({ route, component }) => ({
         params: matches(route, url),
         component,
-    })).filter(({ params }) => params !== undefined);
+    })).filter(isMatchedRoute);
 
     matchedRoutes.sort((a, b) =>
         Object.keys(a).length - Object.keys(b).length
     )
 
-    const [{ params, component },] = matchedRoutes;
+    return matchedRoutes[0]
+}
 
-    if (!params) {
-        throw "not found"
+export async function getServerSideProps<Props>(url: string): Promise<GetServerSidePropsResponse<Props>> {
+    const match = matchRoutes(url);
+    if (!match) { throw "not found" }
+    const { params, component } = match
+
+    const { getServerSideProps } = await component() as PageComponent<Props>;
+
+    if (!getServerSideProps) {
+        throw "no server side props"
     }
+
+    return getServerSideProps({ params })
+}
+
+export async function render(url: string, context?: StaticRouterContext): Promise<string> {
+    const match = matchRoutes(url);
+    if (!match) { throw "not found" }
+    const { params, component } = match
 
     const { default: Component, getServerSideProps, getStaticProps } = await component() as PageComponent<any>;
 

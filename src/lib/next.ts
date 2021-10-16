@@ -1,5 +1,3 @@
-import { ReactElement } from "react";
-
 export type GetServerSideProps<Props> = (context: GetServerSidePropsContext) => Promise<GetServerSidePropsResponse<Props>>;
 
 export interface GetServerSidePropsContext {

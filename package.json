@@ -4,13 +4,14 @@
   "scripts": {
     "dev": "node server",
     "serve": "vite preview",
-    "build": "npm run build:client && npm run build:server",
-    "build:client": "tsc && vite build --outDir dist/static --ssrManifest",
+    "build": "yarn build:client && yarn build:server",
+    "build:client": "tsc && vite build --outDir dist/static --ssrManifest && mv dist/static/index.html dist/index.html",
     "build:server": "tsc && vite build --ssr src/server.tsx --outDir dist/server",
-    "generate": "yarn build:client && yarn build:server && node prerender",
+    "generate": "yarn build && node prerender",
     "debug": "node --inspect-brk server"
   },
   "dependencies": {
+    "compression": "^1.7.4",
     "express": "^4.17.1",
     "react": "@alpha",
     "react-dom": "@alpha",

@@ -12,7 +12,7 @@ async function createServer(
   const resolve = (p) => path.resolve(__dirname, p)
 
   const indexProd = isProd
-    ? fs.readFileSync(resolve('dist/client/index.html'), 'utf-8')
+    ? fs.readFileSync(resolve('dist/index.html'), 'utf-8')
     : ''
 
   const app = express()
@@ -40,11 +40,23 @@ async function createServer(
   } else {
     app.use(require('compression')())
     app.use(
-      require('serve-static')(resolve('dist/client'), {
+      require('serve-static')(resolve('dist/static'), {
         index: false
       })
     )
   }
+
+  app.get("/_next/data/*.json", async (req, res) => {
+    let ssp;
+    if (!isProd) {
+      ssp = (await vite.ssrLoadModule('/src/server.tsx')).getServerSideProps
+    } else {
+      ssp = require('./dist/server/server.js').getServerSideProps
+    }
+
+    const json = await ssp(req.url.slice(11, req.url.length - 5))
+    res.status(200).set({ 'Content-Type': 'application/json' }).end(JSON.stringify(json))
+  })
 
   app.use('*', async (req, res) => {
     try {
@@ -62,7 +74,7 @@ async function createServer(
       }
 
       const context = {}
-      const appHtml = render(url, context)
+      const appHtml = await render(url, context)
 
       if (context.url) {
         // Somewhere a `<Redirect>` was rendered
