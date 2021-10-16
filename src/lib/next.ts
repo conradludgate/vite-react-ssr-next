@@ -22,6 +22,13 @@ export interface GetStaticPropsResponse<Props> {
     notFound?: boolean,
 }
 
+export type GetStaticPaths = () => Promise<GetStaticPathsResponse>;
+
+export interface GetStaticPathsResponse {
+    paths: { params: Record<string, string> }[],
+    fallback: boolean | "blocking",
+}
+
 export interface PageComponent<Props> {
     default: React.JSXElementConstructor<Props>
     getServerSideProps? : GetServerSideProps<Props>

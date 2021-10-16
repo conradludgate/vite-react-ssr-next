@@ -2,13 +2,18 @@
   "name": "vite-react-ssr-next",
   "version": "0.0.0",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "serve": "vite preview"
+    "dev": "node server",
+    "serve": "vite preview",
+    "build": "npm run build:client && npm run build:server",
+    "build:client": "tsc && vite build --outDir dist/static --ssrManifest",
+    "build:server": "tsc && vite build --ssr src/server.tsx --outDir dist/server",
+    "generate": "yarn build:client && yarn build:server && node prerender",
+    "debug": "node --inspect-brk server"
   },
   "dependencies": {
-    "react": "^17.0.0",
-    "react-dom": "^17.0.0",
+    "express": "^4.17.1",
+    "react": "@alpha",
+    "react-dom": "@alpha",
     "react-router-dom": "^5.3.0"
   },
   "devDependencies": {
@@ -16,6 +21,7 @@
     "@types/react-dom": "^17.0.0",
     "@types/react-router-dom": "^5.3.1",
     "@vitejs/plugin-react": "^1.0.0",
+    "fast-glob": "^3.2.7",
     "typescript": "^4.3.2",
     "vite": "^2.6.4"
   }

@@ -18,17 +18,17 @@ async function serverSideProps<Props>(getServerSideProps: GetServerSideProps<Pro
     return getServerSideProps({ params })
   }
   let path = window.location.pathname;
-  if (path.endsWith("/")) { path = path.slice(0, path.length-1) }
+  if (path.endsWith("/")) { path = path.slice(0, path.length - 1) }
   const response = await fetch(`/_next/data${path}.json`);
   return response.json()
 }
 
 const pages = import.meta.glob('./pages/**/*.tsx')
 const routes = Object.entries(pages).map(([filepath, component]) => {
-  let path = filepath
-    .replace("./pages", "")
-    .replace(".tsx", "")
-    .replace("/index", "");
+  const path = filepath
+    .replace(/^\.\/pages/, "")
+    .replace(/.tsx$/, "")
+    .replace(/\/index$/, "");
 
   const sections = Object.fromEntries(
     path.split("/")
@@ -60,17 +60,17 @@ const routes = Object.entries(pages).map(([filepath, component]) => {
 export default function App() {
   return (
     <div>
-      <Switch>
-        {routes.map(({ path, component: RouteComp }) => {
-          return (
-            <Route key={path} path={path}>
-              <Suspense fallback={"loading"}>
+      <Suspense fallback={"loading"}>
+        <Switch>
+          {routes.map(({ path, component: RouteComp }) => {
+            return (
+              <Route key={path} path={path}>
                 <RouteComp />
-              </Suspense>
-            </Route>
-          )
-        })}
-      </Switch>
+              </Route>
+            )
+          })}
+        </Switch>
+      </Suspense>
     </div>
   )
 }

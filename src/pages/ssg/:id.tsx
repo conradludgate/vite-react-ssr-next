@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { GetStaticProps } from "../../lib/next";
+import { GetStaticPaths, GetStaticProps, GetStaticPathsResponse } from "../../lib/next";
 
 interface SSGPageProps {
     text: string
