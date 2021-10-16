@@ -4,6 +4,7 @@
 const FastGlob = require("fast-glob")
 const path = require("path")
 const fs = require("fs/promises")
+const { createWriteStream } = require("fs")
 const { render } = require('./dist/server/server.js')
 
 
@@ -50,18 +51,23 @@ async function main() {
         .replace(/.tsx$/, "")
         .replace(/\/index$/, "");
 
-      const context = {}
-      const appHtml = await render(url, context)
-
-      const html = template.replace(`<!--app-html-->`, appHtml)
-
       const filePath = `dist/static${url}.html`
 
       const sections = filePath.split("/");
       await fs.mkdir(sections.slice(0, sections.length - 1).join("/"), { recursive: true });
+      const file = createWriteStream(toAbsolute(filePath))
 
-      await fs.writeFile(toAbsolute(filePath), html)
-      console.log('pre-rendered:', filePath)
+      const context = {}
+      const stream = await render(url, context)
+
+      const [first, last] = template.split("<!--app-html-->", 2);
+      file.write(first)
+      stream.pipe(file, { end: false });
+      stream.on('end', () => {
+        file.write(last);
+        file.end();
+        console.log('pre-rendered:', filePath)
+      });
     }
   }
 }

@@ -1,5 +1,5 @@
 // @ts-check
-const fs = require('fs')
+const fs = require('fs/promises')
 const path = require('path')
 const express = require('express')
 
@@ -12,7 +12,7 @@ async function createServer(
   const resolve = (p) => path.resolve(__dirname, p)
 
   const indexProd = isProd
-    ? fs.readFileSync(resolve('dist/index.html'), 'utf-8')
+    ? await fs.readFile(resolve('dist/index.html'), 'utf-8')
     : ''
 
   const app = express()
@@ -65,7 +65,7 @@ async function createServer(
       let template, render
       if (!isProd) {
         // always read fresh template in dev
-        template = fs.readFileSync(resolve('index.html'), 'utf-8')
+        template = await fs.readFile(resolve('index.html'), 'utf-8')
         template = await vite.transformIndexHtml(url, template)
         render = (await vite.ssrLoadModule('/src/server.tsx')).render
       } else {
@@ -74,16 +74,22 @@ async function createServer(
       }
 
       const context = {}
-      const appHtml = await render(url, context)
+      const stream = await render(url, context)
 
       if (context.url) {
         // Somewhere a `<Redirect>` was rendered
         return res.redirect(301, context.url)
       }
 
-      const html = template.replace(`<!--app-html-->`, appHtml)
+      res.status(200).set({ 'Content-Type': 'text/html' })
 
-      res.status(200).set({ 'Content-Type': 'text/html' }).end(html)
+      const [first, last] = template.split("<!--app-html-->", 2);
+      res.write(first)
+      stream.pipe(res, { end: false });
+      stream.on('end', () => {
+        res.write(last);
+        res.end();
+      });
     } catch (e) {
       !isProd && vite.ssrFixStacktrace(e)
       console.log(e.stack)

@@ -1,11 +1,11 @@
-import { ReactNode } from "react";
+import { ReactElement } from "react";
 import { GetServerSideProps } from "../../lib/next";
 
 interface SSRPageProps {
     text: string
 }
 
-export default function SSRPage({text}: SSRPageProps): ReactNode {
+export default function SSRPage({text}: SSRPageProps): ReactElement {
     return <p>Hello {text}</p>
 }
 

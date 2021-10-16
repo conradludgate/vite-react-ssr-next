@@ -1,21 +1,12 @@
 import ReactDOMServer from 'react-dom/server'
 import { StaticRouterContext } from 'react-router'
 import { StaticRouter } from 'react-router-dom'
+import { Route, Switch } from 'react-router-dom';
 import App from './App'
 import { GetServerSidePropsResponse, PageComponent } from './lib/next';
+import React, { Suspense } from 'react';
+import { clientRoutes, routes } from './routes';
 
-const pages = import.meta.glob('./pages/**/*.tsx');
-const routes = Object.entries(pages).map(([filepath, component]) => {
-    const route = filepath
-        .replace(/^\.\/pages/, "")
-        .replace(/.tsx$/, "")
-        .replace(/\/index$/, "");
-
-    return {
-        route,
-        component,
-    }
-})
 
 function matches(route: string, path: string): Record<string, string> | undefined {
     const routeSections = route.split("/");
@@ -42,10 +33,12 @@ function matches(route: string, path: string): Record<string, string> | undefine
 }
 
 interface MatchedRoute {
+    route: string,
     params: Record<string, string>,
     component: () => Promise<{[key: string]: any;}>,
 }
 interface MaybeMatchedRoute {
+    route: string,
     params: Record<string, string> | undefined,
     component: () => Promise<{[key: string]: any;}>,
 }
@@ -56,6 +49,7 @@ function isMatchedRoute(m: MaybeMatchedRoute): m is MatchedRoute {
 
 function matchRoutes(url: string): MatchedRoute | undefined {
     const matchedRoutes = routes.map(({ route, component }) => ({
+        route,
         params: matches(route, url),
         component,
     })).filter(isMatchedRoute);
@@ -81,10 +75,10 @@ export async function getServerSideProps<Props>(url: string): Promise<GetServerS
     return getServerSideProps({ params })
 }
 
-export async function render(url: string, context?: StaticRouterContext): Promise<string> {
+export async function render(url: string, context?: StaticRouterContext): Promise<NodeJS.ReadableStream> {
     const match = matchRoutes(url);
     if (!match) { throw "not found" }
-    const { params, component } = match
+    const { route, params, component } = match
 
     const { default: Component, getServerSideProps, getStaticProps } = await component() as PageComponent<any>;
 
@@ -94,10 +88,34 @@ export async function render(url: string, context?: StaticRouterContext): Promis
             ? await getServerSideProps({ params })
             : undefined;
 
-    return ReactDOMServer.renderToString(
-        <StaticRouter location={url} context={context}>
-            <App Component={Component} pageProps={props?.props} />
-        </StaticRouter>
+    return ReactDOMServer.renderToNodeStream(
+        // <StaticRouter location={url} context={context}>
+        //     <App Component={Component} pageProps={props?.props} />
+        // </StaticRouter>
+
+        <React.StrictMode>
+            <StaticRouter location={url} context={context}>
+                <Suspense fallback={"loading"}>
+                    <Switch>
+                        {clientRoutes.map(({ path, load }) => {
+                            if (path === route) {
+                                return (
+                                    <Route key={path} path={path}>
+                                        <App Component={Component} pageProps={props?.props} />
+                                    </Route>
+                                )
+                            }
+                            const RouteComp = React.lazy(load);
+                            return (
+                                <Route key={path} path={path}>
+                                    <RouteComp />
+                                </Route>
+                            )
+                        })}
+                    </Switch>
+                </Suspense>
+            </StaticRouter>
+        </React.StrictMode>
     )
 }
 

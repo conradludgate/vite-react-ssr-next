@@ -1,11 +1,11 @@
-import { ReactNode } from "react";
-import { GetStaticPaths, GetStaticProps, GetStaticPathsResponse } from "../../lib/next";
+import { ReactElement } from "react";
+import { GetStaticProps } from "../../lib/next";
 
 interface SSGPageProps {
     text: string
 }
 
-export default function SSGPage({text}: SSGPageProps): ReactNode {
+export default function SSGPage({text}: SSGPageProps): ReactElement {
     return <p>Hello {text}</p>
 }
 
