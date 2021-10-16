@@ -34,3 +34,8 @@ export interface PageComponent<Props> {
     getServerSideProps? : GetServerSideProps<Props>
     getStaticProps? : GetStaticProps<Props>
 }
+
+export interface AppProps<Props = {}> {
+    Component: React.JSXElementConstructor<Props>,
+    pageProps: Props,
+}

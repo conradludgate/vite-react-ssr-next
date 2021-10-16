@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
-import { RouteChildrenProps } from "react-router";
+import { RouteChildrenProps, useParams } from "react-router";
 
-export default function CSRPage({match}: RouteChildrenProps<{id: string}>): ReactNode {
-    return <p>Hello CSR {match?.params.id}</p>
+export default function CSRPage2(): ReactNode {
+    const params = useParams<{id: string}>();
+    return <p>Hello CSR {params.id}</p>
 }

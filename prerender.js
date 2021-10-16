@@ -31,9 +31,13 @@ async function main() {
       .filter(([section]) => section.startsWith(":"))
       .map(([section, i]) => [section.slice(1), i]);
 
+    console.log({sections, entry})
+
     let paths = [];
     if (sections.length > 0) {
-      paths = (await getStaticPaths(entry)).paths.map(({ params }) => {
+      const p = await getStaticPaths(entry);
+      console.log({p})
+      paths = p.paths.map(({ params }) => {
         let p = entry;
         Object.entries(params).forEach(([key, value]) => {
           p = p.replace(`:${key}`, value)
@@ -44,12 +48,17 @@ async function main() {
       paths = [entry];
     }
 
+    console.log({paths})
 
     for (const path of paths) {
       console.log('pre-rendering:', path)
 
+      let url = "/" + path
+        .replace(/.tsx$/, "")
+        .replace(/\/index$/, "");
+
       const context = {}
-      const appHtml = await render(path, context)
+      const appHtml = await render(url, context)
 
       const html = template.replace(`<!--app-html-->`, appHtml)
 
