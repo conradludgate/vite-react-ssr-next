@@ -5,7 +5,7 @@ import { Route, Switch } from 'react-router-dom';
 import App from './App'
 import { GetServerSidePropsResponse, PageComponent } from './lib/next';
 import React, { Suspense } from 'react';
-import { clientRoutes, routes } from './routes';
+import { routes } from './routes';
 
 
 function matches(route: string, path: string): Record<string, string> | undefined {
@@ -35,12 +35,12 @@ function matches(route: string, path: string): Record<string, string> | undefine
 interface MatchedRoute {
     route: string,
     params: Record<string, string>,
-    component: () => Promise<{[key: string]: any;}>,
+    component: () => Promise<{ [key: string]: any; }>,
 }
 interface MaybeMatchedRoute {
     route: string,
     params: Record<string, string> | undefined,
-    component: () => Promise<{[key: string]: any;}>,
+    component: () => Promise<{ [key: string]: any; }>,
 }
 
 function isMatchedRoute(m: MaybeMatchedRoute): m is MatchedRoute {
@@ -89,29 +89,13 @@ export async function render(url: string, context?: StaticRouterContext): Promis
             : undefined;
 
     return ReactDOMServer.renderToNodeStream(
-        // <StaticRouter location={url} context={context}>
-        //     <App Component={Component} pageProps={props?.props} />
-        // </StaticRouter>
-
         <React.StrictMode>
             <StaticRouter location={url} context={context}>
                 <Suspense fallback={"loading"}>
                     <Switch>
-                        {clientRoutes.map(({ path, load }) => {
-                            if (path === route) {
-                                return (
-                                    <Route key={path} path={path}>
-                                        <App Component={Component} pageProps={props?.props} />
-                                    </Route>
-                                )
-                            }
-                            const RouteComp = React.lazy(load);
-                            return (
-                                <Route key={path} path={path}>
-                                    <RouteComp />
-                                </Route>
-                            )
-                        })}
+                        <Route exact key={route} path={route}>
+                            <App Component={Component} pageProps={props?.props} />
+                        </Route>
                     </Switch>
                 </Suspense>
             </StaticRouter>

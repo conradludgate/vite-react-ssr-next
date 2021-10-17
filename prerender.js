@@ -19,13 +19,16 @@ async function getStaticPaths(file) {
 
 async function main() {
   const toAbsolute = (p) => path.resolve(__dirname, p)
-  const template = await fs.readFile(toAbsolute('dist/index.html'), 'utf-8')
+  const template = await fs.readFile(toAbsolute('dist/client/index.html'), 'utf-8')
   const stream = FastGlob.stream("**/*.tsx", { cwd: toAbsolute("src/pages") })
+
+  const [first, last] = template.split("<!--app-html-->", 2);
 
   for await (const entry of stream) {
     let path = "/" + entry
       .replace(/.tsx$/, "")
-      .replace(/\/index$/, "");
+      .replace(/index$/, "")
+      .replace(/\/$/, "");
 
     const sections = path.split("/")
       .map((section, i) => [section, i])
@@ -49,21 +52,21 @@ async function main() {
     for (const path of paths) {
       let url = "/" + path
         .replace(/.tsx$/, "")
-        .replace(/\/index$/, "");
+        .replace(/index$/, "")
+        .replace(/\/$/, "");
 
-      const filePath = `dist/static${url}.html`
+      const filePath = `dist/static/${path.replace(/.tsx$/, ".html")}`
 
       const sections = filePath.split("/");
       await fs.mkdir(sections.slice(0, sections.length - 1).join("/"), { recursive: true });
-      const file = createWriteStream(toAbsolute(filePath))
+      const file = createWriteStream(filePath)
 
       const context = {}
-      const stream = await render(url, context)
+      const renderStream = await render(url, context)
 
-      const [first, last] = template.split("<!--app-html-->", 2);
       file.write(first)
-      stream.pipe(file, { end: false });
-      stream.on('end', () => {
+      renderStream.pipe(file, { end: false });
+      renderStream.on('end', () => {
         file.write(last);
         file.end();
         console.log('pre-rendered:', filePath)

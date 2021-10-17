@@ -13,7 +13,7 @@ export const routes = Object.entries(pages).map(([filepath, component]) => {
     const route = filepath
         .replace(/^\.\/pages/, "")
         .replace(/.tsx$/, "")
-        .replace(/\/index$/, "");
+        .replace(/\/index$/, "") || "/";
 
     return {
         route,
@@ -22,9 +22,7 @@ export const routes = Object.entries(pages).map(([filepath, component]) => {
 })
 
 async function serverSideProps<Props>(): Promise<GetServerSidePropsResponse<Props>> {
-    let path = window.location.pathname;
-    if (path.endsWith("/")) { path = path.slice(0, path.length - 1) }
-    const response = await fetch(`/_next/data${path}.json`);
+    const response = await fetch(`/_next/data${window.location.pathname.replace(/\/$/, "") || "/index"}.json`);
     return response.json()
 }
 
@@ -45,6 +43,7 @@ export const clientRoutes = routes.map(({ route, component }) => {
             : getServerSideProps
                 ? await serverSideProps()
                 : undefined;
+
         return {
             default: () => <App Component={Component} pageProps={props?.props} />
         }

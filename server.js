@@ -12,7 +12,7 @@ async function createServer(
   const resolve = (p) => path.resolve(__dirname, p)
 
   const indexProd = isProd
-    ? await fs.readFile(resolve('dist/index.html'), 'utf-8')
+    ? await fs.readFile(resolve('dist/client/index.html'), 'utf-8')
     : ''
 
   const app = express()

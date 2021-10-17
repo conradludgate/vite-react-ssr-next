@@ -5,9 +5,9 @@
     "dev": "node server",
     "serve": "vite preview",
     "build": "yarn build:client && yarn build:server",
-    "build:client": "tsc && vite build --outDir dist/static --ssrManifest && mv dist/static/index.html dist/index.html",
+    "build:client": "tsc && vite build --outDir dist/client --ssrManifest",
     "build:server": "tsc && vite build --ssr src/server.tsx --outDir dist/server",
-    "generate": "yarn build && node prerender",
+    "generate": "rm -rf dist/static && yarn build && node prerender && cp -r dist/client/assets dist/static",
     "debug": "node --inspect-brk server"
   },
   "dependencies": {
